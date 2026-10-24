@@ -7,7 +7,7 @@
  "avatarAlt": "A black dog wearing a chef's hat",
  "pronoun": "they",
  "stats": {},
- "updated": "2026-10-22",
+ "updated": "2026-10-24",
  "tags": [
   "john likes"
  ],
@@ -324,6 +324,18 @@
    ],
    "made": {
     "count": 1,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "roasted-honeynut-squash",
+   "section": "sides-and-salads",
+   "blurb": "Sweet little honeynut squash roast up soft and caramelized with no peeling, ready to eat right from the shell with a spoon.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
     "log": []
    },
    "confidence": "clear"
