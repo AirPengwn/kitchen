@@ -3,6 +3,7 @@
  "name": "Mulberry",
  "title": "Mulberry Kitchen",
  "handle": "",
+ "searchHint": "Try ribs, chili or jambalaya",
  "avatar": "people/chef.jpg",
  "avatarAlt": "A black dog wearing a chef's hat",
  "pronoun": "we",
@@ -22,7 +23,7 @@
   {
    "id": "soups-and-slow-cooker",
    "kind": "box",
-   "title": "Soups, stews & slow cooker",
+   "title": "Soups, stews & chili",
    "intro": ""
   },
   {

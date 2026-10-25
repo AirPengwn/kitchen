@@ -44,25 +44,10 @@ img { max-width: 100%; }
     <label class="search" for="q">
       <span class="sr">Search recipes</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
-      <input type="search" id="q" placeholder="Try salmon, pumpkin or tacos" autocomplete="off" enterkeyhint="search">
+      <input type="search" id="q" placeholder="Search recipes" autocomplete="off" enterkeyhint="search">
     </label>
     <div class="fgroups">
-      <div class="fgroup" role="group" aria-labelledby="fl-status"><span class="flabel" id="fl-status">Made</span>
-        <button type="button" class="fchip" data-group="status" data-value="made" aria-pressed="false">Made it <span class="n"></span></button>
-        <button type="button" class="fchip" data-group="status" data-value="notmade" aria-pressed="false">Not yet <span class="n"></span></button>
-      </div>
-      <div class="fgroup" role="group" aria-labelledby="fl-protein"><span class="flabel" id="fl-protein">Protein</span>
-        <button type="button" class="fchip" data-group="protein" data-value="chicken" aria-pressed="false">Chicken <span class="n"></span></button>
-        <button type="button" class="fchip" data-group="protein" data-value="beef" aria-pressed="false">Beef <span class="n"></span></button>
-        <button type="button" class="fchip" data-group="protein" data-value="pork" aria-pressed="false">Pork <span class="n"></span></button>
-        <button type="button" class="fchip" data-group="protein" data-value="seafood" aria-pressed="false">Seafood <span class="n"></span></button>
-        <button type="button" class="fchip" data-group="protein" data-value="eggs" aria-pressed="false">Eggs <span class="n"></span></button>
-        <button type="button" class="fchip" data-group="protein" data-value="meatless" aria-pressed="false">Meatless <span class="n"></span></button>
-      </div>
-      <div class="fgroup" role="group" aria-labelledby="fl-style"><span class="flabel" id="fl-style">Style</span>
-        <button type="button" class="fchip style" data-group="slow" data-value="on" aria-pressed="false">Slow cooker <span class="n"></span></button>
-        <button type="button" class="fchip style" data-group="cozy" data-value="on" aria-pressed="false">Warm &amp; cozy <span class="n"></span></button>
-      </div>
+      <!-- The Made, Protein and Style filters are built by app/app.js. -->
       <div class="fgroup" role="group" aria-labelledby="fl-tags" id="tag-group" hidden><span class="flabel" id="fl-tags">Tags</span></div>
     </div>
     <div class="fstatus"><span class="count" id="count" aria-live="polite"></span><button type="button" class="clear" id="clear" hidden>Clear filters</button></div>

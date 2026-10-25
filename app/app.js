@@ -139,8 +139,7 @@
     var s = $('stats'); s.textContent = '';
     stats.forEach(function (x) { var d = el('div'); d.appendChild(el('b', null, String(x[0]))); d.appendChild(el('span', null, x[1])); s.appendChild(d); });
     $('updated').textContent = person.updated ? 'Updated ' + fmtDate(person.updated) : '';
-    document.querySelector('.fchip[data-value="made"]').firstChild.textContent = pron.made + ' ';
-    document.querySelector('.fchip[data-value="notmade"]').firstChild.textContent = pron.notMade + ' ';
+    qEl.placeholder = person.searchHint || 'Search recipes';
     renderTagChips();
     renderTabs();
   }
@@ -151,6 +150,28 @@
     $('tab-library').textContent = 'Whole library (' + library.length + ')';
     $('tab-box').setAttribute('aria-pressed', String(mode === 'box'));
     $('tab-library').setAttribute('aria-pressed', String(mode === 'library'));
+  }
+
+  // The Made, Protein and Style filter rows, built here for every kitchen (Tags are built below,
+  // from that kitchen's own tags). Each page only has the empty .fgroups spot for them.
+  function buildFilters() {
+    var groups = [
+      ['status', 'Made', [['made', pron.made], ['notmade', pron.notMade]]],
+      ['protein', 'Protein', PROTEIN_IDS.map(function (p) { return [p, LABEL[p]]; })],
+      ['style', 'Style', [['slow:on', 'Slow cooker'], ['cozy:on', 'Warm & cozy']]]
+    ];
+    var host = $('tag-group').parentNode;
+    groups.forEach(function (g) {
+      var box = el('div', 'fgroup'); box.setAttribute('role', 'group'); box.setAttribute('aria-labelledby', 'fl-' + g[0]);
+      var lab = el('span', 'flabel', g[1]); lab.id = 'fl-' + g[0]; box.appendChild(lab);
+      g[2].forEach(function (c) {
+        var key = c[0].split(':'), group = key.length > 1 ? key[0] : g[0], value = key.length > 1 ? key[1] : key[0];
+        var b = btn('fchip' + (g[0] === 'style' ? ' style' : ''), c[1] + ' ');
+        b.setAttribute('data-group', group); b.setAttribute('data-value', value); b.setAttribute('aria-pressed', 'false');
+        b.appendChild(el('span', 'n')); box.appendChild(b);
+      });
+      host.insertBefore(box, $('tag-group'));
+    });
   }
 
   function renderTagChips() {
@@ -1722,6 +1743,7 @@
       var savedSel = load('ek-filters-' + PERSON);
       if (savedSel) GROUPS.forEach(function (g) { if (Array.isArray(savedSel[g])) sel[g] = savedSel[g].slice(); });
       mode = load('ek-mode-' + PERSON) === 'library' ? 'library' : 'box';
+      buildFilters();
       renderHeader();
       chips().forEach(function (b) {
         var g = b.getAttribute('data-group');
