@@ -65,7 +65,28 @@
  "storage": "Refrigerate in an airtight container up to 4 days or freeze up to 2 months; the vegetables soften after freezing. Reheat on a sheet pan at 400°F for 10 to 12 min, or in the microwave, until the sausage reaches 165°F.",
  "credit": "Ree Drummond",
  "photo": null,
- "nutrition": null,
+ "nutrition": {
+  "servings": 5,
+  "perServing": {
+   "calories": 900,
+   "protein_g": 39,
+   "carbs_g": 67,
+   "fat_g": 55,
+   "saturated_fat_g": 16,
+   "fiber_g": 7.5,
+   "sugar_g": 16,
+   "sodium_mg": 2720
+  },
+  "assumptions": [
+   "The recipe makes 4 to 6 servings, so the totals were divided by the middle value of 5.",
+   "All sausage fat and the olive oil are counted because the pan juices are spooned over the platter.",
+   "The crusty bread is assumed to be a 1 lb loaf of French-style bread, and all of it plus the mustard is included.",
+   "The 2 tsp of kosher salt is estimated at about 3,000 mg sodium total, between Diamond Crystal and Morton values.",
+   "Sausage sodium and fat vary by brand; values use typical USDA raw sweet Italian pork sausage, and balsamic is figured at 1.5 Tbsp."
+  ],
+  "model": "claude-opus-5-5",
+  "estimatedAt": "2026-10-25"
+ },
  "addedBy": "mulberry",
  "addedAt": "2026-10-25"
 }
