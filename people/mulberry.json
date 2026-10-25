@@ -7,7 +7,7 @@
  "avatarAlt": "A black dog wearing a chef's hat",
  "pronoun": "they",
  "stats": {},
- "updated": "2026-10-24",
+ "updated": "2026-10-25",
  "tags": [
   "john likes"
  ],
@@ -332,6 +332,18 @@
    "id": "roasted-honeynut-squash",
    "section": "sides-and-salads",
    "blurb": "Sweet little honeynut squash roast up soft and caramelized with no peeling, ready to eat right from the shell with a spoon.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "sheet-pan-sausage-and-summer-vegetables",
+   "section": "dinners",
+   "blurb": "A colorful one-pan dinner of browned sausage and caramelized summer vegetables with plenty of juices for dunking bread.",
    "note": "",
    "tags": [],
    "made": {
