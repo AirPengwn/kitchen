@@ -307,54 +307,76 @@ td:first-child { font-weight: 600; white-space: nowrap; }
 .crop-zoom { display: flex; align-items: center; gap: 12px; font: 600 0.95rem var(--display); }
 .crop-zoom input { flex: 1; min-width: 0; accent-color: var(--scallion); }
 
-/* Printing a recipe: black on white, letter paper, one or two pages */
+/* A step's times and temperatures are marked (b.kp) for the printout; on screen they look like the rest. */
+.step .kp { font-weight: inherit; }
+
+/* Printing a recipe on letter paper, in the house recipe-card style: a serif rust-red title and
+   headings, a bold-label Serves/Prep/Cook line over a rule, bulleted ingredients under gray group
+   names, numbered steps with times and temperatures in bold. Same look for every kitchen. */
 @media print {
-  @page { size: letter; margin: 0.45in 0.55in; }
+  @page { size: letter; margin: 0.75in; }
   :root, :root[data-theme="dark"] {
-    --bg: #fff; --surface: #fff; --ink: #000; --muted: #444; --rule: #bbb; --yolk: #000; --yolk-ink: #000;
-    --on-yolk: #fff; --done: #000; color-scheme: light;
+    --bg: #fff; --surface: #fff; --ink: #1a1a1a; --muted: #555; --rule: #c8c8c8; --yolk: #8b2e1f; --yolk-ink: #8b2e1f;
+    --on-yolk: #fff; --done: #1a1a1a; color-scheme: light;
+    --p-red: #8b2e1f; --p-gray: #404040; --p-shade: #f3e9e3;
+    --p-serif: Georgia, "Times New Roman", serif;
+    --p-sans: Calibri, Carlito, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   }
-  html, body { background: #fff !important; color: #000; }
-  body { padding: 0; font-size: 10pt; line-height: 1.35; }
-  #main, #adder, .vbar, .mybox, .vfoot, .vhint:not(.scale-note), .photo-tools, .vtools, .vnutri, .scale, .vphoto-wrap .status, .passrow, .vhead button, .vbody > .tags, .vbody > .eyebrow, .vbody > .vtop, .vedit, .vbody > .status { display: none !important; }
-  .viewer { max-width: none; margin: 0; font-size: 10pt; line-height: 1.35; }
+  html, body { background: #fff !important; color: #1a1a1a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { padding: 0; font: 11pt/1.32 var(--p-sans); }
+  #main, #adder, .vbar, .mybox, .vfoot, .vhint:not(.scale-note), .photo-tools, .vtools, .vnutri, .scale, .vphoto-wrap, .passrow, .vhead button, .vbody > .tags, .vbody > .eyebrow, .vbody > .vtop, .vedit, .vbody > .status { display: none !important; }
+  .viewer { max-width: none; margin: 0; font: 11pt/1.32 var(--p-sans); }
   .vbody { display: block; }
-  .vbody > * { margin: 0 0 7pt; }
-  .vtitle { display: inline-block; font-size: 19pt; margin: 0 10pt 5pt 0 !important; }
-  .vphoto-wrap { float: right; width: 2.3in; margin: 0 0 8pt 14pt; }
-  .vphoto img { border-radius: 6pt; }
-  .vfacts { display: flex; flex-wrap: wrap; gap: 2pt 16pt; border: 0; border-radius: 0; background: none; overflow: visible; }
-  .vfacts div { padding: 0; background: none; }
-  .vfacts dt, .vfacts dd { display: inline; }
-  .vfacts dt { font-size: 7.5pt; }
-  .vfacts dt::after { content: " "; }
-  .vfacts dd { margin: 0; font-size: 10.5pt; }
-  .vnote, .vbox { display: flow-root; } /* boxes sit beside the photo instead of under it */
-  .vnote { background: none; border-left: 2pt solid #000; border-radius: 0; padding: 3pt 9pt; font-size: 10pt; }
-  .vnote b { color: #000; }
-  .vhead { border-top: 1.2pt solid #000; padding-top: 4pt; margin-top: 2pt; break-after: avoid; }
-  .vhead h2 { font-size: 13pt; }
-  .vequip { display: block; columns: 2; column-gap: 0.3in; padding-left: 1.1em; font-size: 10pt; }
-  .vgroup { color: #000; font-size: 8.5pt; margin: 5pt 0 2pt; break-after: avoid; }
-  .checks { display: block; columns: 2; column-gap: 0.3in; }
-  .checks li { break-inside: avoid; }
-  .checks label { min-height: 0; padding: 1pt 0; border: 0; gap: 6pt; }
-  .checks input { width: 9pt; height: 9pt; margin-top: 3pt; border: 1pt solid #000; border-radius: 2pt; background: #fff; }
-  .checks input::after { display: none; }
-  .checks input:checked + span { color: #000; text-decoration: none; }
-  .vsteps { display: block; }
-  .vsteps li { break-inside: avoid; margin-bottom: 3.5pt; }
-  .step { gap: 8pt; padding: 0; border: 0; border-radius: 0; background: none; line-height: 1.35; }
-  .step .num, .step[aria-pressed="true"] .num { width: 16pt; height: 16pt; font-size: 8.5pt; background: none; color: #000; border: 1pt solid #000; }
-  .step[aria-pressed="true"] .txt { color: #000; }
-  .vbox { border: 1pt solid #bbb; border-radius: 6pt; padding: 6pt 9pt; gap: 3pt; break-inside: avoid; font-size: 10pt; }
-  .vbox h3 { font-size: 11pt; }
-  .vbox ul { gap: 2pt; }
-  .vcredit { font-size: 9pt; color: #444; }
+  .vbody > * { margin: 0 0 6pt; }
+
+  /* Title, kitchen line, and the Serves / Prep / Cook / Total line over a rust-red rule */
+  .vtitle { display: block; font: 700 22pt/1.15 var(--p-serif); color: var(--p-red); letter-spacing: 0; margin: 0 0 4pt !important; }
+  .vbody > .vprint-from { text-align: right; font: 8pt var(--p-sans); color: #777; margin: 0 0 2pt; }
+  .vfacts { display: block; border: 0; border-bottom: 1.25pt solid var(--p-red); border-radius: 0; background: none; overflow: visible; padding: 0 0 5pt; margin: 0 0 12pt; }
+  .vfacts div { display: inline; padding: 0; background: none; margin-right: 14pt; }
+  .vfacts dt, .vfacts dd { display: inline; margin: 0; font: 11pt var(--p-sans); color: #1a1a1a; letter-spacing: 0; text-transform: none; }
+  .vfacts dt { font-weight: 700; }
+  .vfacts dt::after { content: ": "; }
+  .vprint-photo { float: right; width: 2.2in; margin: 2pt 0 8pt 14pt; }
+  .vprint-photo img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4pt; }
+  .vbody > .vprint-nutri { font-size: 9.5pt; color: #555; }
+
+  /* The recipe's short description, and this kitchen's own note */
+  .vnote { display: block; background: none; border: 0; border-radius: 0; padding: 0; font: italic 10.5pt/1.35 var(--p-sans); color: #444; }
+  .vnote b, .vnote .conf { display: none; }
+  .vnote.vmynote { display: flow-root; font-style: normal; color: #1a1a1a; background: var(--p-shade); border-left: 2.5pt solid var(--p-red); padding: 5pt 9pt; }
+  .vnote.vmynote b { display: inline; font: 700 11pt var(--p-sans); color: var(--p-gray); letter-spacing: 0; text-transform: none; margin: 0 4pt 0 0; }
+  .vnote.vmynote b::after { content: ":"; }
+
+  /* Section headings (Equipment, Ingredients, Steps, Tips, Leftovers) and ingredient group names */
+  .vhead { display: block; border: 0; padding: 0; margin: 12pt 0 4pt; break-after: avoid; }
+  .vhead h2, .vbox h3 { font: 700 15pt/1.2 var(--p-serif); color: var(--p-red); }
+  .vhead .vcount { display: none; }
+  .vgroup { font: 700 12pt var(--p-sans); color: var(--p-gray); letter-spacing: 0; text-transform: none; margin: 8pt 0 3pt; break-after: avoid; }
+
+  /* Bulleted lists: equipment (two columns), ingredients, tips */
+  .vequip, .checks, .vbox ul { display: block; list-style: none; margin: 0 0 4pt; padding: 0 0 0 16pt; }
+  .vequip { columns: 2; column-gap: 0.35in; }
+  .vequip li, .checks li, .vbox li { position: relative; margin: 0 0 2pt; break-inside: avoid; font-size: 11pt; }
+  .vequip li::before, .checks li::before, .vbox li::before { content: "•"; position: absolute; left: -11pt; }
+  .checks label { display: block; min-height: 0; padding: 0; border: 0; }
+  .checks input { display: none; }
+  .checks input:checked + span { color: #1a1a1a; text-decoration: none; }
+
+  /* Numbered steps with times and temperatures in bold */
+  .vsteps { display: block; padding: 0; margin: 0; }
+  .vsteps li { break-inside: avoid; margin: 0 0 5pt; }
+  .step { display: flex; gap: 6pt; padding: 0; border: 0; border-radius: 0; background: none; color: #1a1a1a; font: 11pt/1.32 var(--p-sans); }
+  .step .num, .step[aria-pressed="true"] .num { flex: none; display: block; width: 16pt; height: auto; text-align: right; border: 0; border-radius: 0; background: none; color: #1a1a1a; font: 11pt/1.32 var(--p-sans); }
+  .step .num::after { content: "."; }
+  .step .txt, .step[aria-pressed="true"] .txt { color: #1a1a1a; }
+  .step .kp { font-weight: 700; }
+
+  /* Tips and Leftovers read as sections, not boxes */
+  .vbox { display: block; border: 0; border-radius: 0; padding: 0; background: none; font-size: 11pt; }
+  .vbox h3 { margin: 12pt 0 4pt; break-after: avoid; }
+  .vbox p { margin: 0; }
+  .vcredit { font-size: 9pt; color: #555; margin-top: 10pt; }
   .print-only { display: flow-root; }
-  .vnote.vmynote { border: 1pt dashed #000; border-radius: 4pt; padding: 4pt 9pt; font-size: 10pt; }
-  .vmynote b { color: #000; }
-  .vbody > .vprint-nutri { font-size: 9pt; color: #444; }
-  .scale-note { font-size: 9pt; color: #444; font-style: italic; }
-  .vbody > .vprint-from { display: inline-block; font-size: 8pt; color: #444; margin: 0 0 5pt; }
+  .scale-note { font: italic 9pt var(--p-sans); color: #555; }
 }

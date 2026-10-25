@@ -446,6 +446,29 @@
     }
   }
 
+  // A step's text, with its times and temperatures wrapped so the printout can set them in bold
+  // ("Sear 2–3 min per side", "Bake at 350°F"). On screen they look like the rest of the step.
+  var KEY_RE = /\d+(?:\s?[½¼¾⅓⅔])?(?:\s*(?:–|-|to)\s*\d+(?:\s?[½¼¾⅓⅔])?)?\s*(?:minutes?|min|hours?|hrs?|seconds?|sec)\b|\d+\s?°F/g;
+  function stepText(t) {
+    var span = el('span', 'txt'), last = 0, m;
+    KEY_RE.lastIndex = 0;
+    while ((m = KEY_RE.exec(t))) {
+      if (m.index > last) span.appendChild(document.createTextNode(t.slice(last, m.index)));
+      span.appendChild(el('b', 'kp', m[0]));
+      last = m.index + m[0].length;
+    }
+    if (last < t.length) span.appendChild(document.createTextNode(t.slice(last)));
+    return span;
+  }
+  // The printout's photo sits just under the title block (the on-screen photo is above the facts).
+  function syncPrintPhoto(body, src) {
+    var fig = body.querySelector('.vprint-photo'), facts = body.querySelector('.vfacts');
+    if (!src) { if (fig) fig.remove(); return; }
+    if (!fig) { fig = el('figure', 'print-only vprint-photo'); fig.appendChild(el('img')); }
+    body.insertBefore(fig, facts ? facts.nextSibling : body.firstChild);
+    var img = fig.querySelector('img'); img.src = src; img.alt = '';
+  }
+
   /* ---------- Recipe body (recipe view and add preview) ---------- */
   function renderRecipeBody(r, body, opts) {
     var interactive = opts.interactive;
@@ -478,7 +501,8 @@
       var eq = el('ul', 'vequip'); r.equipment.forEach(function (x) { eq.appendChild(el('li', null, x)); }); body.appendChild(eq);
     }
     var nItems = r.ingredients.reduce(function (n, g) { return n + g.items.length; }, 0);
-    var ih = el('div', 'vhead'); ih.appendChild(el('h2', null, 'Ingredients (' + nItems + ')'));
+    var ih = el('div', 'vhead'), ihh = el('h2', null, 'Ingredients');
+    ihh.appendChild(el('span', 'vcount', ' (' + nItems + ')')); ih.appendChild(ihh);
     var resetBtn = null;
     if (interactive) { resetBtn = btn(null, 'Uncheck all'); ih.appendChild(resetBtn); }
     body.appendChild(ih);
@@ -537,7 +561,7 @@
     r.steps.forEach(function (t, k) {
       var li = el('li'), b = btn('step');
       b.setAttribute('aria-pressed', String(saved.s.indexOf(k) !== -1));
-      b.appendChild(el('span', 'num', String(k + 1))); b.appendChild(el('span', 'txt', t));
+      b.appendChild(el('span', 'num', String(k + 1))); b.appendChild(stepText(t));
       if (interactive) b.addEventListener('click', function () {
         var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on));
         saved.s = saved.s.filter(function (x) { return x !== k; }); if (on) saved.s.push(k); save();
@@ -621,6 +645,7 @@
           pending = null; retry = null;
           refresh(); r = byId[r.id];
           draw();
+          syncPrintPhoto(body, photoSrc(r));
           setStatus(image ? 'Saved. Everyone will see it on the site in a minute or two.' : 'Photo removed.');
         })
         .catch(function (e) {
@@ -1107,8 +1132,9 @@
     editRow.appendChild(editBtn); body.appendChild(editRow);
     // Only on paper: this person's own note, and where the printout came from.
     syncNote(body, r);
+    syncPrintPhoto(body, photoSrc(r));
     var titleEl = body.querySelector('.vtitle');
-    body.insertBefore(el('p', 'print-only vprint-from', person.title + ' · printed ' + fmtDate(new Date())), titleEl.nextSibling);
+    body.insertBefore(el('p', 'print-only vprint-from', person.title + ' · printed ' + fmtDate(new Date())), titleEl);
     var foot = el('div', 'vfoot'); foot.appendChild(homeButton()); body.appendChild(foot);
     viewer.appendChild(body);
     show('viewer');
