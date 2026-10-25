@@ -70,7 +70,26 @@ globalThis.fetch = async (input, init = {}) => {
       return Response.json({});
     }
   }
+  if (url.startsWith("https://recipes.example/")) {
+    const page = PAGES[new URL(url).pathname];
+    if (!page) return new Response("not found", { status: 404, headers: { "content-type": "text/html" } });
+    return new Response(page.body, { status: page.status || 200, headers: { "content-type": page.type || "text/html; charset=utf-8" } });
+  }
   throw new Error("Unexpected fetch " + method + " " + url);
+};
+// Fake recipe web pages for the "add from a link" tests.
+const PAGES = {
+  "/ld": { body: `<html><head><title>Tomato Soup | Example Kitchen</title><meta property="og:site_name" content="Example Kitchen">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"x"},{"@type":["Recipe"],"name":"Tomato Soup &amp; Grilled Cheese",
+    "author":{"@type":"Person","name":"Pat Cook"},"recipeYield":["4","4 bowls"],"prepTime":"PT10M","cookTime":"PT1H5M",
+    "recipeIngredient":["2 Tbsp butter","1 (28-oz) can tomatoes"],
+    "recipeInstructions":[{"@type":"HowToSection","name":"Soup","itemListElement":[{"@type":"HowToStep","text":"Melt the butter."},{"@type":"HowToStep","text":"Add tomatoes &amp; simmer 20 min."}]},"Serve hot."]}]}</script>
+    </head><body><p>My grandmother's story goes on for pages...</p></body></html>` },
+  "/plain": { body: `<html><head><title>Lemon Bars</title><style>.x{}</style></head><body><nav>Home | About</nav>
+    <article><h1>Lemon Bars</h1><ul><li>1 cup flour</li><li>2 eggs</li></ul><p>Bake at 350&deg;F for 20 min.</p></article><footer>Copyright</footer>
+    <script>var ads = 1;</script></body></html>` },
+  "/blocked": { status: 403, body: "no bots" },
+  "/photo.jpg": { body: "JFIF", type: "image/jpeg" },
 };
 
 const call = (path, body, method = "POST", origin = ORIGIN) =>
@@ -157,6 +176,44 @@ await test("oversized image is rejected before calling Claude", async () => {
   const r = await call("/parse", { passcode: "correct horse", person: "erin", images: [{ media_type: "image/jpeg", data: "A".repeat(7_000_001) }] });
   assert.equal(r.status, 413);
   assert.equal(lastClaudeBody, null);
+});
+
+await test("a recipe link: the page's recipe data goes to Claude, not the story around it", async () => {
+  const r = await call("/parse", { passcode: "blue lantern", person: "mulberry", url: "https://recipes.example/ld" });
+  assert.equal(r.status, 200, JSON.stringify(await r.clone().json()));
+  const p = lastClaudeBody.messages[0].content.at(-1).text;
+  assert.match(p, /Recipe from a web page: https:\/\/recipes\.example\/ld \(site: Example Kitchen/);
+  assert.match(p, /recipe data the page publishes/);
+  assert.match(p, /Name: Tomato Soup & Grilled Cheese/);
+  assert.match(p, /Author: Pat Cook/);
+  assert.match(p, /Prep: 10 min\nCook: 1 hr 5 min/);
+  assert.match(p, /- 1 \(28-oz\) can tomatoes/);
+  assert.match(p, /Soup:\n- Melt the butter\.\n- Add tomatoes & simmer 20 min\.\n- Serve hot\./);
+  assert.doesNotMatch(p, /grandmother/, "the story around the recipe is left out");
+});
+
+await test("a recipe link without recipe data: the page text is used, minus menus, scripts and styles", async () => {
+  const r = await call("/parse", { passcode: "blue lantern", person: "mulberry", url: "https://recipes.example/plain" });
+  assert.equal(r.status, 200);
+  const p = lastClaudeBody.messages[0].content.at(-1).text;
+  assert.match(p, /text of the page/);
+  assert.match(p, /Lemon Bars\n- 1 cup flour\n- 2 eggs\nBake at 350°F for 20 min\./);
+  assert.doesNotMatch(p, /var ads|\.x\{\}|Home \| About|Copyright/);
+});
+
+await test("recipe links: private addresses, blocked sites and non-pages get clear refusals", async () => {
+  lastClaudeBody = null;
+  const parse = (url) => call("/parse", { passcode: "blue lantern", person: "mulberry", url });
+  for (const bad of ["http://localhost/x", "http://127.0.0.1/", "https://10.0.0.5/r", "http://[::1]/", "file:///etc/passwd", "https://nas.local/r", "not a link"]) {
+    assert.equal((await parse(bad)).status, 400, bad);
+  }
+  let j = await (await parse("https://recipes.example/blocked")).json();
+  assert.match(j.error, /wouldn't let the helper read the page/);
+  j = await (await parse("https://recipes.example/missing")).json();
+  assert.match(j.error, /didn't load \(error 404\)/);
+  j = await (await parse("https://recipes.example/photo.jpg")).json();
+  assert.match(j.error, /isn't a web page/);
+  assert.equal(lastClaudeBody, null, "Claude is never called for a link that can't be read");
 });
 
 await test("a PDF goes to Claude as a document, first, with its name in the prompt", async () => {

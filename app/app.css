@@ -185,7 +185,7 @@ td:first-child { font-weight: 600; white-space: nowrap; }
 .adder .vbar { margin-bottom: 0; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label, .field legend { font: 600 0.95rem var(--display); }
-.field textarea, .field input[type="password"], .field input[type="text"], .field input[type="date"], .field select {
+.field textarea, .field input[type="password"], .field input[type="text"], .field input[type="date"], .field input[type="url"], .field select {
   width: 100%; font: 400 1rem var(--body); font-size: max(16px, 1rem); color: var(--ink); background: var(--surface);
   border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; min-height: 48px; }
 .field textarea { resize: vertical; }

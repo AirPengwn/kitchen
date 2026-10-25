@@ -1,6 +1,6 @@
 // Kitchen helper: a small Cloudflare Worker behind the "Add a recipe" button.
 //   POST /check  { passcode }                       -> { ok, person }
-//   POST /parse  { passcode, person, text, images, pdf?: { name, data }, sections, previous?, fix? }
+//   POST /parse  { passcode, person, text, images, pdf?: { name, data }, url?, sections, previous?, fix? }
 //                -> { recipe, note, suggestedSection, assumptions }
 //   POST /save   { passcode, person, recipe, box: { mode, section, blurb, date } }
 //                -> { id, recipe, entry }
@@ -221,6 +221,115 @@ export function slugify(title) {
 }
 
 /* ---------------- Claude ---------------- */
+/* ---------------- Reading a recipe from a web page ---------------- */
+// Most recipe sites publish the recipe as schema.org JSON-LD for search engines; that is used when it's
+// there, since it's just the recipe without the stories, ads and comments. Otherwise the page's text is used.
+const MAX_PAGE_BYTES = 4_000_000;
+export function checkRecipeUrl(raw) {
+  let u;
+  try { u = new URL(String(raw || "").trim()); } catch { u = null; }
+  if (!u || !/^https?:$/.test(u.protocol)) throw new HttpError(400, "That link doesn't look right. Copy the whole address, starting with https://.");
+  const h = u.hostname.toLowerCase();
+  // Only public websites: no local names or bare IP addresses.
+  if (!h.includes(".") || h === "localhost" || /\.(local|localhost|internal|lan|home)$/.test(h) || /^[\d.]+$/.test(h) || h.includes(":") || h.startsWith("["))
+    throw new HttpError(400, "That link can't be read. Use a recipe page on a public website.");
+  return u;
+}
+const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", ndash: "–", mdash: "—", frac12: "½", frac14: "¼", frac34: "¾", deg: "°", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", hellip: "…" };
+function decodeEntities(s) {
+  return String(s || "").replace(/&(#x[0-9a-f]+|#\d+|[a-z]+\d*);/gi, (m, e) => {
+    if (e[0] === "#") { const n = e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m; }
+    return ENTITIES[e.toLowerCase()] ?? m;
+  });
+}
+function plain(s) { return decodeEntities(String(s || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim(); }
+function metaContent(html, name) {
+  const re = new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*>`, "i"), tag = re.exec(html);
+  const m = tag && /content=["']([^"']*)["']/i.exec(tag[0]);
+  return m ? plain(m[1]) : "";
+}
+function findJsonLdRecipe(html) {
+  const re = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const isRecipe = (o) => o && typeof o === "object" && [].concat(o["@type"] || []).some((t) => String(t).toLowerCase() === "recipe");
+  function walk(o) {
+    if (!o || typeof o !== "object") return null;
+    if (Array.isArray(o)) { for (const x of o) { const f = walk(x); if (f) return f; } return null; }
+    if (isRecipe(o)) return o;
+    return walk(o["@graph"]) || walk(o.mainEntity) || null;
+  }
+  for (let m; (m = re.exec(html));) {
+    let data;
+    try { data = JSON.parse(m[1].trim()); } catch { continue; }
+    const r = walk(data);
+    if (r) return r;
+  }
+  return null;
+}
+function isoDuration(d) {
+  const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/i.exec(String(d || ""));
+  if (!m || !(m[1] || m[2] || m[3])) return plain(d);
+  const hrs = (+m[1] || 0) * 24 + (+m[2] || 0), min = +m[3] || 0;
+  return [hrs ? `${hrs} hr` : "", min ? `${min} min` : ""].filter(Boolean).join(" ");
+}
+function names(x) { return [].concat(x || []).map((a) => plain(typeof a === "string" ? a : a && a.name)).filter(Boolean).join(", "); }
+function recipeLdToText(r) {
+  const lines = [`Name: ${plain(r.name)}`];
+  if (r.description) lines.push(`Description: ${plain(r.description)}`);
+  const by = names(r.author); if (by) lines.push(`Author: ${by}`);
+  if (r.recipeYield) lines.push(`Yield: ${[].concat(r.recipeYield).map(plain).join(" / ")}`);
+  for (const [k, label] of [["prepTime", "Prep"], ["cookTime", "Cook"], ["totalTime", "Total"]]) if (r[k]) lines.push(`${label}: ${isoDuration(r[k])}`);
+  lines.push("", "Ingredients:", ...[].concat(r.recipeIngredient || r.ingredients || []).map((x) => `- ${plain(x)}`));
+  lines.push("", "Instructions:");
+  (function steps(list, depth) {
+    for (const s of [].concat(list || [])) {
+      if (typeof s === "string") lines.push(`- ${plain(s)}`);
+      else if (s && [].concat(s["@type"] || []).includes("HowToSection")) { lines.push(`${plain(s.name)}:`); steps(s.itemListElement, depth + 1); }
+      else if (s) lines.push(`- ${plain(s.text || s.name)}`);
+    }
+  })(r.recipeInstructions, 0);
+  return lines.join("\n");
+}
+function htmlToText(html) {
+  return decodeEntities(html
+    .replace(/<(script|style|noscript|svg|nav|header|footer|aside|form|iframe|template)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<li\b[^>]*>/gi, "\n- ")
+    .replace(/<(br|\/p|\/div|\/h[1-6]|\/li|\/tr|\/section|\/article)\b[^>]*>/gi, "\n")
+    .replace(/<[^>]+>/g, " "))
+    .split("\n").map((l) => l.replace(/\s+/g, " ").trim()).filter((l) => l && l !== "-").join("\n");
+}
+export function pageToText(html, url) {
+  const host = new URL(url).hostname.replace(/^www\./, "");
+  const recipe = findJsonLdRecipe(html);
+  return {
+    url, site: metaContent(html, "og:site_name") || host,
+    title: metaContent(html, "og:title") || plain((/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html) || [])[1]),
+    structured: !!recipe,
+    text: (recipe ? recipeLdToText(recipe) : htmlToText(html)).slice(0, MAX_TEXT),
+  };
+}
+async function readRecipePage(raw) {
+  const u = checkRecipeUrl(raw);
+  let res;
+  try {
+    res = await fetch(u.toString(), {
+      redirect: "follow", signal: AbortSignal.timeout(15_000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; KitchenHelper/1.0; +https://airpengwn.github.io/kitchen/)", Accept: "text/html,application/xhtml+xml" },
+    });
+  } catch { throw new HttpError(422, "Couldn't reach that page. Check the link, or copy the recipe text and paste it instead."); }
+  checkRecipeUrl(res.url || u.toString()); // a redirect must not end up somewhere private either
+  if (!res.ok) {
+    throw new HttpError(422, [401, 403, 429, 451].includes(res.status)
+      ? "That site wouldn't let the helper read the page. Copy the recipe text and paste it, or add screenshots instead."
+      : `That page didn't load (error ${res.status}). Check the link, or paste the recipe text instead.`);
+  }
+  if (!/html|xml|text\/plain/i.test(res.headers.get("content-type") || "")) throw new HttpError(422, "That link isn't a web page. If it's a PDF or a photo, download it and add it as a file.");
+  if (Number(res.headers.get("content-length") || 0) > MAX_PAGE_BYTES) throw new HttpError(422, "That page is too big to read. Copy the recipe text and paste it instead.");
+  const page = pageToText((await res.text()).slice(0, MAX_PAGE_BYTES), res.url || u.toString());
+  if (page.text.length < 40) throw new HttpError(422, "That page had almost no text the helper could read (it may need a login or load the recipe later). Copy the recipe text and paste it instead.");
+  return page;
+}
+
 async function parseRecipe(body, env) {
   const text = typeof body.text === "string" ? body.text.slice(0, MAX_TEXT) : "";
   const images = Array.isArray(body.images) ? body.images : [];
@@ -238,12 +347,18 @@ async function parseRecipe(body, env) {
   const total = images.reduce((n, im) => n + im.data.length, 0) + (pdf ? pdf.data.length : 0);
   if (total > MAX_TOTAL_B64) throw new HttpError(413, "That's too much to send at once. Use fewer or smaller files.");
   const hasPrevious = body.previous && typeof body.previous === "object";
-  if (!text.trim() && !images.length && !pdf && !hasPrevious) throw new HttpError(400, "Paste some text or add an image first.");
+  if (!text.trim() && !images.length && !pdf && !body.url && !hasPrevious) throw new HttpError(400, "Paste some text or add an image first.");
+  const page = body.url ? await readRecipePage(body.url) : null;
 
   const sections = (Array.isArray(body.sections) ? body.sections : []).slice(0, 40)
     .filter((s) => s && typeof s.id === "string").map((s) => `- ${cleanText(s.id, 80)}: ${cleanText(s.title, 120)}`).join("\n");
 
   let prompt = `The recipe is for ${cleanText(body.person, 40)}'s page. Sections on that page:\n${sections || "(none)"}\n`;
+  if (page) {
+    prompt += `\nRecipe from a web page: ${page.url} (site: ${page.site}${page.title ? `, page title: ${page.title}` : ""}).\n` +
+      (page.structured ? "Below is the recipe data the page publishes for search engines.\n" : "Below is the text of the page. It may include stories, ads and comments around the recipe; use only the recipe.\n") +
+      `<<<\n${page.text}\n>>>\nFor credit, use the site name, plus the author if the page names one.\n`;
+  }
   if (text.trim()) prompt += `\nPasted text:\n<<<\n${text}\n>>>\n`;
   if (images.length) prompt += `\n${images.length} image(s) of the recipe are attached above.\n`;
   if (pdf) prompt += `\nA PDF${pdf.name ? ` ("${cleanText(pdf.name, 120)}")` : ""} with the recipe is attached above.\n`;

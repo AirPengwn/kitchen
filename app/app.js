@@ -12,7 +12,8 @@
   var PRON = {
     she: { poss: 'Her', subj: 'she', made: "She's made it", notMade: "Hasn't made it", d: "she'd" },
     he: { poss: 'His', subj: 'he', made: "He's made it", notMade: "Hasn't made it", d: "he'd" },
-    they: { poss: 'Their', subj: 'they', made: "They've made it", notMade: "Haven't made it", d: "they'd" }
+    they: { poss: 'Their', subj: 'they', made: "They've made it", notMade: "Haven't made it", d: "they'd" },
+    we: { poss: 'Our', subj: 'we', made: "We've made it", notMade: "Haven't made it", d: "we'd" }
   };
   var GROUPS = ['status', 'protein', 'slow', 'cozy', 'tag'];
   var $ = function (id) { return document.getElementById(id); };
@@ -1470,7 +1471,15 @@
       adder.appendChild(el('p', 'status error', "Adding recipes isn't switched on yet. The helper service still needs to be set up (see SETUP.md in the GitHub repo)."));
       show('adder'); window.scrollTo(0, 0); return;
     }
-    adder.appendChild(el('p', 'vhint', "Paste a recipe's text, or add photos, screenshots, a PDF or a Word document. Claude reads it and writes it in the same format as the other recipes. You'll see a preview before anything is saved. New recipes go into the whole library, so everyone can find them."));
+    adder.appendChild(el('p', 'vhint', "Paste a link to a recipe page or the recipe's text, or add photos, screenshots, a PDF or a Word document. Claude reads it and writes it in the same format as the other recipes. You'll see a preview before anything is saved. New recipes go into the whole library, so everyone can find them."));
+
+    var f0 = el('div', 'field');
+    var l0 = el('label', null, 'Recipe link'); l0.htmlFor = 'add-url';
+    var urlIn = el('input'); urlIn.type = 'url'; urlIn.id = 'add-url'; urlIn.inputMode = 'url'; urlIn.autocomplete = 'off';
+    urlIn.placeholder = 'https://…'; urlIn.className = 'url-in';
+    f0.appendChild(l0); f0.appendChild(urlIn);
+    f0.appendChild(el('span', 'hint', "Paste the address of a recipe page. Some sites don't allow it; if so, paste the recipe's text or add screenshots instead."));
+    adder.appendChild(f0);
 
     var f1 = el('div', 'field');
     var l1 = el('label', null, 'Recipe text'); l1.htmlFor = 'add-text';
@@ -1567,8 +1576,11 @@
 
     function runParse(extra) {
       if (add.busy) return;
-      var text = ta.value.trim();
-      if (!text && !add.images.length && !add.pdf) { setStatus('Paste some text or add a photo or file first.', true); return; }
+      var text = ta.value.trim(), url = urlIn.value.trim();
+      // A link pasted into the text box on its own is treated as a recipe link.
+      if (!url && /^https?:\/\/\S+$/i.test(text)) { url = text; urlIn.value = text; ta.value = ''; text = ''; }
+      if (url && !/^https?:\/\/\S+\.\S+/i.test(url)) { setStatus('That link doesn\'t look right. Copy the whole address, starting with https://.', true); urlIn.focus(); return; }
+      if (!text && !url && !add.images.length && !add.pdf) { setStatus('Paste a link or some text, or add a photo or file first.', true); return; }
       if (pass.need()) { setStatus('Enter the passcode.', true); return; }
       add.busy = true; go.disabled = true;
       var t0 = Date.now();
@@ -1580,6 +1592,7 @@
         sections: person.sections.map(function (s) { return { id: s.id, title: s.title }; })
       };
       if (add.pdf) payload.pdf = { name: add.pdf.name, data: add.pdf.data };
+      if (url) payload.url = url;
       if (extra) { payload.previous = extra.previous; payload.fix = extra.fix; }
       helper('/parse', payload).then(function (j) {
         pass.ok();
