@@ -8,7 +8,7 @@
  "avatarAlt": "A black dog wearing a chef's hat",
  "pronoun": "we",
  "stats": {},
- "updated": "2026-10-25",
+ "updated": "2026-10-30",
  "tags": [
   "John likes",
   "Mary likes"
@@ -346,6 +346,18 @@
    "id": "sheet-pan-sausage-and-summer-vegetables",
    "section": "dinners",
    "blurb": "A colorful one-pan dinner of browned sausage and caramelized summer vegetables with plenty of juices for dunking bread.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "shanghai-style-braised-pork-belly-hong-shao-rou",
+   "section": "dinners",
+   "blurb": "This is the classic Shanghai red-cooked pork: tender pork belly in a sweet, savory, glossy soy glaze that's made for a bowl of rice.",
    "note": "",
    "tags": [],
    "made": {
