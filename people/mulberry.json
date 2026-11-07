@@ -8,7 +8,7 @@
  "avatarAlt": "A black dog wearing a chef's hat",
  "pronoun": "we",
  "stats": {},
- "updated": "2026-10-30",
+ "updated": "2026-11-07",
  "tags": [
   "John likes",
   "Mary likes"
@@ -358,6 +358,54 @@
    "id": "shanghai-style-braised-pork-belly-hong-shao-rou",
    "section": "dinners",
    "blurb": "This is the classic Shanghai red-cooked pork: tender pork belly in a sweet, savory, glossy soy glaze that's made for a bowl of rice.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "slow-cooker-brown-sugar-bbq-chicken-leg-quarters",
+   "section": "dinners",
+   "blurb": "Sweet, smoky rubbed leg quarters, braised tender and broiled sticky with barbecue sauce.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "smoked-jerk-chicken-leg-quarters",
+   "section": "dinners",
+   "blurb": "Scotch bonnet and allspice marinade, fruit-wood smoke, and crisp skin from a hot-grill finish.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "soy-ginger-glazed-chicken-leg-quarters",
+   "section": "dinners",
+   "blurb": "The soy-ginger steak-on-a-stick marinade, scaled down for roasted leg quarters and broiled to a lacquer.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "slow-cooker-smothered-chicken-leg-quarters",
+   "section": "dinners",
+   "blurb": "Seared, then slow-braised over onions and mushrooms and smothered in a brown roux gravy.",
    "note": "",
    "tags": [],
    "made": {
