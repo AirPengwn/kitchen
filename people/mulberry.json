@@ -8,7 +8,7 @@
  "avatarAlt": "A black dog wearing a chef's hat",
  "pronoun": "we",
  "stats": {},
- "updated": "2026-11-07",
+ "updated": "2026-11-13",
  "tags": [
   "John likes",
   "Mary likes"
@@ -406,6 +406,18 @@
    "id": "slow-cooker-smothered-chicken-leg-quarters",
    "section": "dinners",
    "blurb": "Seared, then slow-braised over onions and mushrooms and smothered in a brown roux gravy.",
+   "note": "",
+   "tags": [],
+   "made": {
+    "count": 0,
+    "log": []
+   },
+   "confidence": "clear"
+  },
+  {
+   "id": "classic-oven-bbq-back-ribs",
+   "section": "dinners",
+   "blurb": "Low and slow in the oven, then a quick broil, gives you tender, sticky ribs with no smoker needed.",
    "note": "",
    "tags": [],
    "made": {
